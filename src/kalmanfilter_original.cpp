@@ -11,10 +11,10 @@
 
 // -------------------------------------------------- //
 // YOU CAN USE AND MODIFY THESE CONSTANTS HERE
-constexpr bool INIT_ON_FIRST_PREDICTION = false;
-constexpr double INIT_POS_STD = 10;
-constexpr double INIT_VEL_STD = 10;
-constexpr double ACCEL_STD = 10;
+constexpr bool INIT_ON_FIRST_PREDICTION = true;
+constexpr double INIT_POS_STD = 0;
+constexpr double INIT_VEL_STD = 15;
+constexpr double ACCEL_STD = 0.1;
 constexpr double GPS_POS_STD = 3.0;
 // -------------------------------------------------- //
 
@@ -35,15 +35,7 @@ void KalmanFilter::predictionStep(double dt)
 
             // Assume the initial position is (X,Y) = (0,0) m
             // Assume the initial velocity is 5 m/s at 45 degrees (VX,VY) = (5*cos(45deg),5*sin(45deg)) m/s
-
-            // initialization state
-            state << 0, 0, 5*cos(M_PI/4), 5*sin(M_PI/4);
-
-            // initialization covariance
-            cov(0,0) = std::pow(INIT_POS_STD, 2);
-            cov(1,1) = std::pow(INIT_POS_STD, 2);
-            cov(2,2) = std::pow(INIT_VEL_STD, 2);
-            cov(3,3) = std::pow(INIT_VEL_STD, 2);
+            state << 0, 0, 5.0*cos(M_PI/4), 5.0*sin(M_PI/4);
 
             setState(state);
             setCovariance(cov);
@@ -60,29 +52,7 @@ void KalmanFilter::predictionStep(double dt)
         // Hint: You can use the constants: ACCEL_STD
         // ----------------------------------------------------------------------- //
         // ENTER YOUR CODE HERE
-         
-        // Process Model matrix
-        MatrixXd F = MatrixXd::Identity(4,4);
-        F(0,2) = dt;
-        F(1,3) = dt;
 
-        // update the state
-        state = F*state;  
-
-        // Process Noise Covariance matrix
-        MatrixXd Q = MatrixXd::Zero(2,2);
-        Q(0,0) = std::pow(ACCEL_STD, 2);
-        Q(1,1) = std::pow(ACCEL_STD, 2);
-
-        // Meaurement Noise Covariance matrix
-        MatrixXd L = MatrixXd::Zero(4,2);
-        L(0,0) = 0.5*dt*dt;
-        L(1,1) = 0.5*dt*dt;
-        L(2,0) = dt;
-        L(3,1) = dt;
-
-        // update the covariance
-        cov = F*cov*F.transpose() + L*Q*L.transpose();
 
         // ----------------------------------------------------------------------- //
 
@@ -105,32 +75,6 @@ void KalmanFilter::handleGPSMeasurement(GPSMeasurement meas)
         // ----------------------------------------------------------------------- //
         // ENTER YOUR CODE HERE 
 
-        // Setup H and R matrices
-        MatrixXd H = MatrixXd::Zero(2,4);
-        H(0,0) = 1;
-        H(1,1) = 1;
-
-        MatrixXd R = MatrixXd::Zero(2,2);
-        R(0,0) = std::pow(GPS_POS_STD, 2);
-        R(1,1) = std::pow(GPS_POS_STD, 2);
-
-        // Compute the Innovation
-        MatrixXd y = MatrixXd::Zero(2,1);
-        Vector2d z = Vector2d::Zero();
-        z << meas.x, meas.y;
-        y = z - H*state;
-
-        // Compute the Innovation Covariance
-        MatrixXd S = MatrixXd::Zero(2,2);
-        S = H*cov*H.transpose() + R;
-
-        // Compute the Kalman Gain
-        MatrixXd K = MatrixXd::Zero(4,2);
-        K = cov*H.transpose()*S.inverse();
-
-        // Update the State and Covariance
-        state = state + K*y;
-        cov = (MatrixXd::Identity(4,4) - K*H)*cov;
 
         // ----------------------------------------------------------------------- //
 
@@ -148,17 +92,7 @@ void KalmanFilter::handleGPSMeasurement(GPSMeasurement meas)
         // ENTER YOUR CODE HERE
             VectorXd state = Vector4d::Zero();
             MatrixXd cov = Matrix4d::Zero();
-            // initialization state
-            state << meas.x, meas.y, 0, 0;
 
-            // initialization covariance
-            MatrixXd R = MatrixXd::Zero(2,2);
-            R(0,0) = std::pow(GPS_POS_STD, 2);
-            R(1,1) = std::pow(GPS_POS_STD, 2);
-            cov(0,0) = R(0,0);
-            cov(1,1) = R(1,1);
-            cov(2,2) = std::pow(INIT_VEL_STD, 2);
-            cov(3,3) = std::pow(INIT_VEL_STD, 2);
 
             setState(state);
             setCovariance(cov);

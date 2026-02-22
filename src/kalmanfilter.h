@@ -34,6 +34,7 @@ class KalmanFilterBase
 
     private:
         bool m_initialised;
+        bool m_fully_initialised;
         VectorXd m_state;
         MatrixXd m_covariance;
 };
@@ -50,6 +51,7 @@ class KalmanFilter : public KalmanFilterBase
         void handleLidarMeasurements(const std::vector<LidarMeasurement>& meas, const BeaconMap& map);
         void handleLidarMeasurement(LidarMeasurement meas, const BeaconMap& map);
         void handleGPSMeasurement(GPSMeasurement meas);
+        bool fully_initialised(std::vector<bool> init_vector) const;
 
 };
 
